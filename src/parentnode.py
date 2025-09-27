@@ -11,9 +11,12 @@ class ParentNode(HTMLNode):
 			raise ValueError("Tag value is mandatory")
 		if self.children is None:
 			raise ValueError("There is no children")
-		result: str = ""
-
-		for child in self.children:
-			result += child.to_html()
+		
+		def loop(cs: list[HTMLNode], result: str) -> str:
+			if not cs:
+				return result
+			else:
+				return loop(cs[1:], result + cs[0].to_html())
+		result: str = loop(self.children, "")
 
 		return f"<{self.tag}{self.props_to_html()}>{result}</{self.tag}>"
