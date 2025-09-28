@@ -32,15 +32,16 @@ def extract_markdown_images(txt: str) -> list[tuple[str, str]]:
 			i += 2
 
 			alt_text = txt[i:j]
-			i = j
-		elif txt[i] == "(":
-			j = i
-			while txt[j] != ")":
-				j += 1
-			i += 1
-			link = txt[i:j]
-			i = j
-			i += 1
+			i = j + 1
+			if txt[i] == "(":
+
+				j = i
+				while txt[j] != ")":
+					j += 1
+				i += 1
+				link = txt[i:j]
+				i = j
+				i += 1
 
 			result.append((alt_text, link))
 	
@@ -50,24 +51,23 @@ def extract_markdown_links(txt: str) -> list[tuple[str, str]]:
 	alt_text: str = ""
 	link: str = ""
 	result: list[tuple[str, str]] = []
-	i = 0
 	for i in range(len(txt)):
-		if txt[i] == "[":
+		if txt[i] == "[" and txt[i - 1] != "!":
 			j = i
 			while txt[j] != "]":
 				j += 1
 			i += 1
 
 			alt_text = txt[i:j]
-			i = j
-		elif txt[i] == "(":
-			j = i
-			while txt[j] != ")":
-				j += 1
-			i += 1
-			link = txt[i:j]
-			i = j
-			i += 1
+			i = j + 1
+			if txt[i] == "(":
+				j = i
+				while txt[j] != ")":
+					j += 1
+				i += 1
+				link = txt[i:j]
+				i = j
+				i += 1
 
 			result.append((alt_text, link))
 	
@@ -85,7 +85,7 @@ def split_nodes_link(old_nodes: list[TextNode]) -> list[TextNode]:
     	links: list[tuple[str, str]] = extract_markdown_links(og_text)
 
     	if not links:
-    		node.append(new_nodes)
+    		new_nodes.append(node)
     		continue
     	for link in links:
     		splitted = og_text.split(f"[{link[0]}]({link[1]})")
@@ -115,7 +115,7 @@ def split_nodes_image(old_nodes: list[TextNode]) -> list[TextNode]:
     	images: list[tuple[str, str]] = extract_markdown_images(og_text)
 
     	if not images:
-    		node.append(new_nodes)
+    		new_nodes.append(node)
     		continue
     	for image in images:
     		splitted = og_text.split(f"![{image[0]}]({image[1]})")
@@ -134,3 +134,16 @@ def split_nodes_image(old_nodes: list[TextNode]) -> list[TextNode]:
     	
     	return new_nodes
     
+def text_to_text_nodes(txt: str) -> list[TextNode]:
+	new_nodes: list[TextNode] = []
+	node = TextNode(txt, TextType.TEXT)
+
+	result = split_node_delimiter([node], "**", TextType.BOLD)
+	result = split_node_delimiter(result, "_", TextType.ITALIC)
+	result = split_node_delimiter(result, "`", TextType.CODE)
+	result = split_nodes_image(result)
+	result = split_nodes_link(result)
+	
+
+
+	return result
