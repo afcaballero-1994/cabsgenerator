@@ -1,4 +1,9 @@
 from enum import Enum
+from htmlnode import HTMLNode
+from parentnode import ParentNode
+from spllit_nodes import *
+from textnode import *
+from leafnode import LeafNode
 
 class BlockType(Enum):
     PARAGRAPH = "paragraph"
@@ -40,3 +45,27 @@ def block_to_block_type(block: str) -> BlockType:
                 return BlockType.PARAGRAPH
             return BlockType.OLIST
     return BlockType.PARAGRAPH
+
+def markdown_to_html_node(markdown: str) -> ParentNode:
+    blocks: list[str] = markdown_to_blocks(markdown)
+    parent: HTMLNode = ParentNode("div", [])
+
+    for block in blocks:
+        bltype: BlockType = block_to_block_type(block)
+        match bltype:
+            case BlockType.PARAGRAPH:
+                pblock: ParentNode = ParentNode("p", [])
+
+                nodes: list[TextNode] = text_to_text_nodes(block.replace("\n", " "))
+                for node in nodes:
+                    pblock.children.append(text_node_to_html_node(node))
+                parent.children.append(pblock)
+            case BlockType.CODE:
+                pblock: ParentNode = ParentNode("pre", [])
+
+                node = TextNode(block.lstrip("`\n").rstrip("`"), TextType.CODE)
+                hnode = text_node_to_html_node(node)
+                pblock.children.append(hnode)
+                parent.children.append(pblock)
+
+    return parent
