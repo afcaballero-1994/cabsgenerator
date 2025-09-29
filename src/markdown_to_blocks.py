@@ -4,6 +4,7 @@ from parentnode import ParentNode
 from spllit_nodes import *
 from textnode import *
 from leafnode import LeafNode
+import re
 
 class BlockType(Enum):
     PARAGRAPH = "paragraph"
@@ -66,6 +67,53 @@ def markdown_to_html_node(markdown: str) -> ParentNode:
                 node = TextNode(block.lstrip("`\n").rstrip("`"), TextType.CODE)
                 hnode = text_node_to_html_node(node)
                 pblock.children.append(hnode)
+                parent.children.append(pblock)
+
+            case BlockType.HEADING:
+                level_heading: int = 1
+                while level_heading < len(block):
+                    match block[level_heading]:
+                        case "#":
+                            level_heading += 1
+                        case " ":
+                            break
+                pblock: ParentNode = ParentNode(f"h{level_heading}", [])
+                nodes: list[TextNode] = text_to_text_nodes(block.strip("# "))
+                for node in nodes:
+                    pblock.children.append(text_node_to_html_node(node))
+                parent.children.append(pblock)
+            
+            case BlockType.QUOTE:
+                pblock: ParentNode = ParentNode("blockquote", [])
+                nodes: list[TextNode] = text_to_text_nodes(block.replace("> ", "").replace("\n", " "))
+                for node in nodes:
+                    pblock.children.append(text_node_to_html_node(node))
+                parent.children.append(pblock)
+            
+            case BlockType.ULIST:
+                pblock: ParentNode = ParentNode("ul", [])
+
+                lulist: list[str] = block.split("\n")
+                for item in lulist:
+                    nodes = text_to_text_nodes(item.strip("- "))
+                    pnode: ParentNode = ParentNode("li", [])
+                    for node in nodes:
+                        pnode.children.append(text_node_to_html_node(node))
+                    pblock.children.append(pnode)
+
+                parent.children.append(pblock)
+            case BlockType.OLIST:
+                pblock: ParentNode = ParentNode("ol", [])
+                striped: str = re.sub(r"(\d+. )", "", block)
+
+                olist: list[str] = striped.split("\n")
+                for item in olist:
+                    nodes = text_to_text_nodes(item)
+                    pnode: ParentNode = ParentNode("li", [])
+
+                    for node in nodes:
+                        pnode.children.append(text_node_to_html_node(node))
+                    pblock.children.append(pnode)
                 parent.children.append(pblock)
 
     return parent
