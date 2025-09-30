@@ -2,6 +2,7 @@ from textnode import TextNode
 from textnode import TextType
 from markdown_to_blocks import markdown_to_html_node
 
+import sys
 import os, shutil
 
 def extrac_title(markdown: str) -> str:
@@ -13,7 +14,7 @@ def extrac_title(markdown: str) -> str:
     else:
         raise ValueError("Not valid header file")
 
-def generate_page(from_path: str, template_path: str, dst_path: str):
+def generate_page(from_path: str, template_path: str, dst_path: str, basepath: str):
     print(f"generating from: {from_path} using: {template_path} to: {dst_path}")
 
     with open(from_path) as mark, open(template_path) as templ, open(dst_path, "w") as ds:
@@ -22,12 +23,12 @@ def generate_page(from_path: str, template_path: str, dst_path: str):
         html_node = markdown_to_html_node(markdown)
 
         title = extrac_title(markdown)
-        print(2, title)
 
         htmtow = templ_html.replace("{{ Content }}", html_node.to_html()).replace("{{ Title }}", title)
+        htmtow = htmtow.replace("href=\"/", f"href=\"{basepath}").replace("src=\"/", f"src=\"{basepath}")
         ds.write(htmtow)
 
-def generate_pages_recursive(dir_path_content: str, template_path: str, dst_dir_path: str):
+def generate_pages_recursive(dir_path_content: str, template_path: str, dst_dir_path: str, basepath: str):
 
     def loop(dirs: [str], c: str):
         cd = list(map(lambda x: os.path.join(c,x), dirs))
@@ -36,7 +37,7 @@ def generate_pages_recursive(dir_path_content: str, template_path: str, dst_dir_
             if os.path.isfile(d):
                 print(f"about to generate: {d}")
                 cpath = d.replace(dir_path_content, dst_dir_path).replace(".md", ".html")
-                generate_page(d, template_path, cpath)
+                generate_page(d, template_path, cpath, basepath)
             else:
                 dsc = dst_dir_path + d[len(dir_path_content):]
 
@@ -46,9 +47,8 @@ def generate_pages_recursive(dir_path_content: str, template_path: str, dst_dir_
                 loop(os.listdir(d), d)
     loop(os.listdir(dir_path_content), dir_path_content)
 
-def copy_pub():
+def copy_pub(dst: str):
     src: str = "./static"
-    dst: str = "./public"
     if os.path.exists(dst):
         print(f"deleting: {dst}")
         shutil.rmtree(dst)
@@ -75,7 +75,12 @@ def copy_pub():
     loop(os.listdir(src), src)
 
 def main() -> None:
-    copy_pub()
-    generate_pages_recursive("./content", "./template.html", "./public")
+    basepath = "/"
+    dst = "./docs"
+    copy_pub(dst)
+    if len(sys.argv) == 2:
+        print("______bip")
+        basepath = sys.argv[1]
+    generate_pages_recursive("./content", "./template.html", dst, basepath)
 
 main()
