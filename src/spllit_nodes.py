@@ -10,7 +10,7 @@ def split_node_delimiter(old_nodes: list[TextNode],
         
         if len(st) % 2 == 0:
             raise ValueError("Invalid Markdown syntax")
-        new_text: list[str] = list(filter(lambda x: x != "", st))
+        new_text: list[str] = list(filter(lambda x: x != " ", st))
         to_be_added: list[TextNode] = []
 
         for text in new_text:
@@ -27,6 +27,8 @@ def extract_markdown_images(txt: str) -> list[tuple[str, str]]:
     result: list[tuple[str, str]] = []
     i = 0
     for i in range(len(txt)):
+        if i + 1 >= len(txt):
+            continue
         if txt[i] == "!" and txt[i + 1] == "[":
             j = i
             while txt[j] != "]":
@@ -141,10 +143,10 @@ def text_to_text_nodes(txt: str) -> list[TextNode]:
     new_nodes: list[TextNode] = []
     node = TextNode(txt, TextType.TEXT)
 
-    result = split_node_delimiter([node], "**", TextType.BOLD)
-    result = split_node_delimiter(result, "_", TextType.ITALIC)
-    result = split_node_delimiter(result, "`", TextType.CODE)
-    result = split_nodes_image(result)
+    result = split_nodes_image([node])
     result = split_nodes_link(result)
+    result = split_node_delimiter(result, "`", TextType.CODE)
+    result = split_node_delimiter(result, "_", TextType.ITALIC)
+    result = split_node_delimiter(result, "**", TextType.BOLD)
 
     return result

@@ -27,8 +27,24 @@ def generate_page(from_path: str, template_path: str, dst_path: str):
         htmtow = templ_html.replace("{{ Content }}", html_node.to_html()).replace("{{ Title }}", title)
         ds.write(htmtow)
 
-def generate_pages_recuersive(dir_path_content: str, template_path: str, dst_dir_path: str):
-    
+def generate_pages_recursive(dir_path_content: str, template_path: str, dst_dir_path: str):
+
+    def loop(dirs: [str], c: str):
+        cd = list(map(lambda x: os.path.join(c,x), dirs))
+
+        for d in cd:
+            if os.path.isfile(d):
+                print(f"about to generate: {d}")
+                cpath = d.replace(dir_path_content, dst_dir_path).replace(".md", ".html")
+                generate_page(d, template_path, cpath)
+            else:
+                dsc = dst_dir_path + d[len(dir_path_content):]
+
+                if not os.path.exists(dsc):
+                    print(f"creating dir: {dsc}")
+                    os.mkdir(dsc)
+                loop(os.listdir(d), d)
+    loop(os.listdir(dir_path_content), dir_path_content)
 
 def copy_pub():
     src: str = "./static"
@@ -60,6 +76,6 @@ def copy_pub():
 
 def main() -> None:
     copy_pub()
-    generate_page("./content/index.md", "./template.html", "./public/index.html")
+    generate_pages_recursive("./content", "./template.html", "./public")
 
 main()
